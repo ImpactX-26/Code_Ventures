@@ -1,0 +1,604 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  APPLICANT
+  CONSULTANT
+  ADMIN
+}
+
+enum UserStatus {
+  EMAIL_VERIFICATION_PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum Pathway {
+  STUDY
+  VOCATIONAL
+  EMPLOYMENT
+}
+
+enum SourceType {
+  APPLICANT_PROVIDED
+  DOCUMENT_EXTRACTED
+  VIDEO_EXTRACTED
+  WEB_RESEARCH
+  VERIFIED
+  AI_GENERATED
+}
+
+enum QualificationStatus {
+  READY
+  ADDITIONAL_REQUIREMENTS_NEEDED
+  NOT_READY
+  PENDING
+}
+
+enum DocumentType {
+  CV
+  DEGREE
+  CERTIFICATE
+  EXPERIENCE_LETTER
+  LANGUAGE_CERTIFICATE
+  OTHER
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  EXTRACTED
+  VERIFIED
+  CONFLICT
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ConflictStatus {
+  OPEN
+  RESOLVED
+}
+
+enum VideoStatus {
+  UPLOADED
+  PROCESSING
+  TRANSCRIBED
+  ANALYZED
+}
+
+enum ResearchSourceType {
+  GOVERNMENT
+  UNIVERSITY
+  RECOGNITION_PORTAL
+  AUSBILDUNG_PORTAL
+  OFFICIAL_EMPLOYMENT
+}
+
+enum ClarificationStatus {
+  PENDING
+  ANSWERED
+}
+
+enum RecommendationStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum AgentRunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AgentName {
+  INTAKE
+  PROFILE
+  DOCUMENT
+  WEB_RESEARCH
+  VERIFICATION
+  CLARIFICATION
+  QUALIFICATION
+  RECOMMENDATION
+  CV
+  VIDEO
+  ORCHESTRATOR
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ALERT
+}
+
+model User {
+  id                    String                   @id @default(uuid())
+  email                 String                   @unique
+  passwordHash          String
+  role                  UserRole                 @default(APPLICANT)
+  status                UserStatus               @default(EMAIL_VERIFICATION_PENDING)
+  emailVerified         Boolean                  @default(false)
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  emailTokens           EmailVerificationToken[]
+  passwordResetTokens   PasswordResetToken[]
+  applicant             Applicant?
+  notifications         Notification[]
+
+  @@map("users")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  otp       String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model Applicant {
+  id                      String                    @id @default(uuid())
+  userId                  String                    @unique
+  user                    User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName                String
+  phone                   String?
+  location                String?
+  targetPathway           Pathway?
+  profileCompleteness     Int                       @default(0)
+  qualificationStatus     QualificationStatus       @default(PENDING)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+
+  goals                   ApplicantGoal[]
+  educationRecords        EducationRecord[]
+  employmentRecords       EmploymentRecord[]
+  applicantSkills         ApplicantSkill[]
+  applicantLanguages      ApplicantLanguage[]
+  documents               Document[]
+  documentExtractions     DocumentExtraction[]
+  documentConflicts       DocumentConflict[]
+  videoSubmissions        VideoSubmission[]
+  videoTranscripts        VideoTranscript[]
+  videoInsights           VideoInsight[]
+  researchSources         ResearchSource[]
+  clarificationTasks      ClarificationTask[]
+  qualificationAssessments QualificationAssessment[]
+  recommendations         Recommendation[]
+  cvVersions              CvVersion[]
+  agentRuns               AgentRun[]
+  agentActions            AgentAction[]
+
+  @@map("applicants")
+}
+
+model ApplicantGoal {
+  id             String    @id @default(uuid())
+  applicantId    String
+  applicant      Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  pathway        Pathway
+  preferredField String?
+  targetIntake   String?
+  motivation     String?
+  timeline       String?
+  createdAt      DateTime  @default(now())
+
+  @@index([applicantId])
+  @@map("applicant_goals")
+}
+
+model EducationRecord {
+  id             String     @id @default(uuid())
+  applicantId    String
+  applicant      Applicant  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  institution    String
+  degree         String
+  fieldOfStudy   String
+  graduationDate String?
+  gradeCgpa      String?
+  maxGrade       String?
+  source         SourceType @default(APPLICANT_PROVIDED)
+  confidence     Float      @default(1.0)
+  verified       Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+
+  @@index([applicantId])
+  @@map("education_records")
+}
+
+model EmploymentRecord {
+  id               String     @id @default(uuid())
+  applicantId      String
+  applicant        Applicant  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  employer         String
+  role             String
+  responsibilities String?
+  startDate        String?
+  endDate          String?
+  isCurrent        Boolean    @default(false)
+  source           SourceType @default(APPLICANT_PROVIDED)
+  confidence       Float      @default(1.0)
+  verified         Boolean    @default(false)
+  createdAt        DateTime   @default(now())
+
+  @@index([applicantId])
+  @@map("employment_records")
+}
+
+model Skill {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  category        String           @default("Technical")
+  createdAt       DateTime         @default(now())
+  applicantSkills ApplicantSkill[]
+
+  @@map("skills")
+}
+
+model ApplicantSkill {
+  id          String     @id @default(uuid())
+  applicantId String
+  applicant   Applicant  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  skillId     String?
+  skill       Skill?     @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  skillName   String
+  level       String     @default("Intermediate")
+  source      SourceType @default(APPLICANT_PROVIDED)
+  confidence  Float      @default(1.0)
+  verified    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+
+  @@index([applicantId])
+  @@map("applicant_skills")
+}
+
+model Language {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String
+  createdAt DateTime @default(now())
+
+  @@map("languages")
+}
+
+model ApplicantLanguage {
+  id              String     @id @default(uuid())
+  applicantId     String
+  applicant       Applicant  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  languageName    String
+  proficiency     String
+  hasCertificate  Boolean    @default(false)
+  certificateType String?
+  source          SourceType @default(APPLICANT_PROVIDED)
+  confidence      Float      @default(1.0)
+  verified        Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+
+  @@index([applicantId])
+  @@map("applicant_languages")
+}
+
+model Document {
+  id           String               @id @default(uuid())
+  applicantId  String
+  applicant    Applicant            @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  fileName     String
+  originalName String
+  fileType     String
+  documentType DocumentType
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  status       DocumentStatus       @default(UPLOADED)
+  createdAt    DateTime             @default(now())
+  extractions  DocumentExtraction[]
+
+  @@index([applicantId])
+  @@map("documents")
+}
+
+model DocumentExtraction {
+  id                 String             @id @default(uuid())
+  documentId         String
+  document           Document           @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  applicantId        String
+  applicant          Applicant          @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  fieldKey           String
+  fieldValue         String
+  confidence         Float              @default(0.90)
+  source             SourceType         @default(DOCUMENT_EXTRACTED)
+  verificationStatus VerificationStatus @default(PENDING)
+  createdAt          DateTime           @default(now())
+
+  @@index([documentId])
+  @@index([applicantId])
+  @@map("document_extractions")
+}
+
+model DocumentConflict {
+  id            String         @id @default(uuid())
+  applicantId   String
+  applicant     Applicant      @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  fieldName     String
+  valueA        String
+  sourceA       String
+  valueB        String
+  sourceB       String
+  status        ConflictStatus @default(OPEN)
+  resolvedValue String?
+  resolvedBy    String?
+  createdAt     DateTime       @default(now())
+
+  @@index([applicantId])
+  @@map("document_conflicts")
+}
+
+model VideoSubmission {
+  id          String            @id @default(uuid())
+  applicantId String
+  applicant   Applicant         @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  fileName    String
+  filePath    String
+  duration    Float             @default(0)
+  mimeType    String
+  status      VideoStatus       @default(UPLOADED)
+  createdAt   DateTime          @default(now())
+
+  transcripts VideoTranscript[]
+  insights    VideoInsight[]
+
+  @@index([applicantId])
+  @@map("video_submissions")
+}
+
+model VideoTranscript {
+  id                String          @id @default(uuid())
+  videoSubmissionId String
+  videoSubmission   VideoSubmission @relation(fields: [videoSubmissionId], references: [id], onDelete: Cascade)
+  applicantId       String
+  applicant         Applicant       @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  transcriptText    String
+  language          String          @default("en")
+  confidence        Float           @default(0.9)
+  createdAt         DateTime        @default(now())
+
+  @@index([videoSubmissionId])
+  @@index([applicantId])
+  @@map("video_transcripts")
+}
+
+model VideoInsight {
+  id                  String          @id @default(uuid())
+  videoSubmissionId   String
+  videoSubmission     VideoSubmission @relation(fields: [videoSubmissionId], references: [id], onDelete: Cascade)
+  applicantId         String
+  applicant           Applicant       @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  extractedMotivation String
+  careerGoals         String
+  preferredField      String
+  communicationScore  Float           @default(8.5)
+  germanInterestLevel String          @default("High")
+  source              SourceType      @default(VIDEO_EXTRACTED)
+  confidence          Float           @default(0.9)
+  createdAt           DateTime        @default(now())
+
+  @@index([videoSubmissionId])
+  @@index([applicantId])
+  @@map("video_insights")
+}
+
+model WebResearch {
+  id         String           @id @default(uuid())
+  pathway    Pathway
+  query      String
+  summary    String
+  rawResults Json?
+  createdAt  DateTime         @default(now())
+
+  sources    ResearchSource[]
+
+  @@map("web_research")
+}
+
+model ResearchSource {
+  id            String             @id @default(uuid())
+  webResearchId String?
+  webResearch   WebResearch?       @relation(fields: [webResearchId], references: [id], onDelete: SetNull)
+  applicantId   String?
+  applicant     Applicant?         @relation(fields: [applicantId], references: [id], onDelete: SetNull)
+  title         String
+  information   String
+  source        String
+  url           String
+  retrievedDate DateTime           @default(now())
+  sourceType    ResearchSourceType @default(GOVERNMENT)
+  confidence    Float              @default(0.95)
+  pathway       Pathway
+  createdAt     DateTime           @default(now())
+
+  @@index([pathway])
+  @@index([applicantId])
+  @@map("research_sources")
+}
+
+model ClarificationTask {
+  id             String              @id @default(uuid())
+  applicantId    String
+  applicant      Applicant           @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  question       String
+  reason         String
+  options        Json
+  status         ClarificationStatus @default(PENDING)
+  selectedOption String?
+  customAnswer   String?
+  createdAt      DateTime            @default(now())
+  answeredAt     DateTime?
+
+  @@index([applicantId])
+  @@map("clarification_tasks")
+}
+
+model QualificationRule {
+  id                String   @id @default(uuid())
+  pathway           Pathway
+  requirement       String
+  description       String
+  required          Boolean  @default(true)
+  source            String
+  active            Boolean  @default(true)
+  ruleCode          String   @unique
+  thresholdCriteria Json?
+  createdAt         DateTime @default(now())
+
+  @@index([pathway])
+  @@map("qualification_rules")
+}
+
+model QualificationAssessment {
+  id                  String              @id @default(uuid())
+  applicantId         String
+  applicant           Applicant           @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  status              QualificationStatus
+  overallScore        Int                 @default(0)
+  pathway             Pathway
+  summary             String
+  details             Json
+  missingRequirements Json
+  createdAt           DateTime            @default(now())
+
+  @@index([applicantId])
+  @@map("qualification_assessments")
+}
+
+model Recommendation {
+  id                     String               @id @default(uuid())
+  applicantId            String
+  applicant              Applicant            @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  recommendedStep        String
+  reason                 String
+  supportingRequirements Json
+  serviceId              String?
+  priority               String               @default("HIGH")
+  status                 RecommendationStatus @default(ACTIVE)
+  createdAt              DateTime             @default(now())
+
+  @@index([applicantId])
+  @@map("recommendations")
+}
+
+model Service {
+  id             String   @id @default(uuid())
+  name           String
+  slug           String   @unique
+  description    String
+  category       String
+  targetPathways Json
+  duration       String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@map("services")
+}
+
+model CvVersion {
+  id          String    @id @default(uuid())
+  applicantId String
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  title       String
+  cvData      Json
+  template    String    @default("GERMAN_STANDARD")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([applicantId])
+  @@map("cv_versions")
+}
+
+model AgentRun {
+  id          String         @id @default(uuid())
+  applicantId String
+  applicant   Applicant      @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  runType     String
+  status      AgentRunStatus @default(RUNNING)
+  startTime   DateTime       @default(now())
+  endTime     DateTime?
+  createdAt   DateTime       @default(now())
+  actions     AgentAction[]
+
+  @@index([applicantId])
+  @@map("agent_runs")
+}
+
+model AgentAction {
+  id          String    @id @default(uuid())
+  agentRunId  String
+  agentRun    AgentRun  @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  applicantId String
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  agentName   AgentName
+  action      String
+  reason      String
+  result      Json?
+  confidence  Float     @default(1.0)
+  timestamp   DateTime  @default(now())
+
+  @@index([agentRunId])
+  @@index([applicantId])
+  @@map("agent_actions")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  applicantId String?
+  action      String
+  entity      String
+  entityId    String?
+  details     Json?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicantId String?
+  title       String
+  message     String
+  type        NotificationType @default(INFO)
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  @@index([userId])
+  @@map("notifications")
+}

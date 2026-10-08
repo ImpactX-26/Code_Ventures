@@ -1,4 +1,10 @@
-import { ApplicantProfile, ChatMessage, ReActStep } from '../types/index';
+import {
+  ApplicantProfile,
+  ChatMessage,
+  ReActStep,
+  PathwayComparisonResult,
+  EducaroCounselorDossier,
+} from '../types/index';
 
 const API_BASE = '/api';
 
@@ -41,6 +47,39 @@ export const api = {
       method: 'POST',
     });
     if (!res.ok) throw new Error('Failed to reset demo applicant');
+    return res.json();
+  },
+
+  // Export Counselor Dossier (Feature 3)
+  async exportDossier(applicantId: string): Promise<EducaroCounselorDossier> {
+    const res = await fetch(`${API_BASE}/applicants/${applicantId}/export-dossier`);
+    if (!res.ok) throw new Error('Failed to export counselor dossier');
+    return res.json();
+  },
+
+  // Multi-Pathway "What-If" Simulation Branching (Feature 2)
+  async getPathwayComparison(applicantId: string): Promise<PathwayComparisonResult> {
+    const res = await fetch(`${API_BASE}/recommendations/${applicantId}/pathway-comparison`);
+    if (!res.ok) throw new Error('Failed to fetch pathway comparison');
+    return res.json();
+  },
+
+  async simulateWhatIf(
+    applicantId: string,
+    overrides: {
+      germanLevel?: string;
+      gpaOrPercentage?: number;
+      experienceMonths?: number;
+      hasApsCertificate?: boolean;
+      goalTrack?: 'Study' | 'Ausbildung' | 'Employment';
+    },
+  ): Promise<PathwayComparisonResult> {
+    const res = await fetch(`${API_BASE}/recommendations/${applicantId}/simulate-what-if`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(overrides),
+    });
+    if (!res.ok) throw new Error('Failed to simulate what-if branching');
     return res.json();
   },
 

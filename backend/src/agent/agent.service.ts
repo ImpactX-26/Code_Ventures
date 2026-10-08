@@ -332,14 +332,14 @@ ${statusBadge} for German **${track} Track** (Profile Completeness: **${evalResu
 
 Here is how your profile was analyzed and structured:
 
-1. **Academic Evaluation [Applicant-Provided & AI-Inferred]:**
+1. **Academic Evaluation [User-Typed & AI-Suggested]:**
    - Degree: **${primaryEdu?.qualification || 'Bachelor Degree'}** from **${primaryEdu?.institution || 'Indian University'}**
    ${bavarianStr ? `- ${bavarianStr}` : ''}
    - **KMK Anabin Institutional Recognition:** **H+** (Fully equivalent in Germany).
 
 2. **Language Benchmark:**
    - German Competence: **${germanLang?.level || 'A1 Pending'}** ${
-     germanLang?.isVerified ? '[Verified via Certificate]' : '[Applicant-Provided]'
+     germanLang?.isVerified ? '[Document-Verified]' : '[User-Typed]'
    }.
    ${
      track === 'Ausbildung'
@@ -350,12 +350,12 @@ Here is how your profile was analyzed and structured:
 3. **German Legal & Visa Roadmap:**
    ${apsNotice}
 
-4. **Recommended Educaro Next Steps [AI-Generated]:**
+4. **Recommended Educaro Next Steps [AI-Suggested]:**
    - **Recommended Package:** *${evalResult.educaroServiceRouting?.[0]?.serviceName || 'Educaro FastTrack'}*
    - Next Action: ${evalResult.actionableNextSteps?.[0]?.text || 'Upload degree transcripts for OCR audit.'}
 
-> **Provenance Guarantee:** Every field above is categorized as **[Applicant-Provided]**, **[Verified]**, or **[AI-Generated]** so your official German visa dossier contains zero hallucinations.
+> **Anti-Hallucination Provenance Guarantee:** Every field above is strictly categorized as **[Document-Verified]**, **[User-Typed]**, or **[AI-Suggested]** so that all German university and consular submissions remain 100% auditable.
 
-Would you like to upload your degree/marksheet for automated OCR verification, or record a quick 45-second video introduction to boost your profile score?`;
+Would you like to upload your degree/marksheet for automated OCR verification, or test our Multi-Pathway Simulator to compare Study vs Ausbildung vs Employment?`;
   }
 }

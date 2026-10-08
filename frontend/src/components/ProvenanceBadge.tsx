@@ -4,47 +4,60 @@ import { DataProvenance } from '../types/index';
 
 interface ProvenanceBadgeProps {
   provenance?: DataProvenance | string;
-  size?: 'sm' | 'md';
+  size?: 'xs' | 'sm' | 'md';
+  showLabel?: boolean;
 }
 
 export const ProvenanceBadge: React.FC<ProvenanceBadgeProps> = ({
-  provenance = 'APPLICANT_PROVIDED',
+  provenance = 'USER_TYPED',
   size = 'sm',
+  showLabel = true,
 }) => {
+  // Normalize legacy names if encountered
+  const normalized =
+    provenance === 'VERIFIED' || provenance === 'DOCUMENT_VERIFIED'
+      ? 'DOCUMENT_VERIFIED'
+      : provenance === 'AI_GENERATED' || provenance === 'AI_SUGGESTED'
+      ? 'AI_SUGGESTED'
+      : 'USER_TYPED';
+
+  const isXs = size === 'xs';
   const isSm = size === 'sm';
-  const padClass = isSm ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs';
+  const padClass = isXs ? 'px-1.5 py-0.2 text-[10px]' : isSm ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-xs';
+  const iconSize = isXs ? 'w-2.5 h-2.5' : isSm ? 'w-3 h-3' : 'w-3.5 h-3.5';
 
-  if (provenance === 'VERIFIED') {
+  if (normalized === 'DOCUMENT_VERIFIED') {
     return (
       <span
-        title="Document OCR or Official Authority Authenticated"
-        className={`inline-flex items-center gap-1 font-medium rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 ${padClass}`}
+        title="Document-Verified: Extracted via official OCR (Degree, Marksheet, Goethe Scorecard, or APS Token)"
+        className={`inline-flex items-center gap-1 font-semibold rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/35 shadow-sm shadow-emerald-500/10 ${padClass}`}
       >
-        <ShieldCheck className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
-        <span>Verified</span>
+        <ShieldCheck className={`${iconSize} text-emerald-400 shrink-0`} />
+        {showLabel && <span>Document-Verified</span>}
       </span>
     );
   }
 
-  if (provenance === 'AI_GENERATED') {
+  if (normalized === 'AI_SUGGESTED') {
     return (
       <span
-        title="AI-Inferred Recommendation or Pathway Computation"
-        className={`inline-flex items-center gap-1 font-medium rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30 ${padClass}`}
+        title="AI-Suggested: Algorithmically inferred, Bavarian formula calculated, or forecasted recommendation"
+        className={`inline-flex items-center gap-1 font-semibold rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/35 shadow-sm shadow-amber-500/10 ${padClass}`}
       >
-        <Sparkles className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
-        <span>AI-Generated</span>
+        <Sparkles className={`${iconSize} text-amber-400 shrink-0`} />
+        {showLabel && <span>AI-Suggested</span>}
       </span>
     );
   }
 
+  // Blue for User-Typed
   return (
     <span
-      title="Directly Stated by Applicant during Interview"
-      className={`inline-flex items-center gap-1 font-medium rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 ${padClass}`}
+      title="User-Typed: Directly stated by applicant during interview or typed in onboarding questionnaire"
+      className={`inline-flex items-center gap-1 font-semibold rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/35 shadow-sm shadow-blue-500/10 ${padClass}`}
     >
-      <UserCheck className={isSm ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
-      <span>Applicant-Provided</span>
+      <UserCheck className={`${iconSize} text-blue-400 shrink-0`} />
+      {showLabel && <span>User-Typed</span>}
     </span>
   );
 };

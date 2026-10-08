@@ -16,6 +16,11 @@ export class ApplicantsController {
     return this.applicantsService.findOne(id);
   }
 
+  @Get(':id/export-dossier')
+  async exportDossier(@Param('id') id: string) {
+    return this.applicantsService.compileDossier(id);
+  }
+
   @Post()
   async create(@Body() createDto: CreateApplicantDto) {
     return this.applicantsService.create(createDto);

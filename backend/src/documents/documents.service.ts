@@ -16,7 +16,7 @@ export interface OcrSimulationResult {
     entityType: 'Education' | 'Language' | 'Employment' | 'APS';
     updatedId: string;
     previousProvenance: string;
-    newProvenance: 'VERIFIED';
+    newProvenance: 'DOCUMENT_VERIFIED';
   };
 }
 
@@ -58,6 +58,11 @@ export class DocumentsService {
       extractedData: null,
       verificationState: 'PENDING',
       verificationNotes: 'Uploaded document awaiting OCR verification.',
+      provenance: 'USER_TYPED',
+      provenanceMetadata: {
+        title: 'USER_TYPED',
+        docType: 'USER_TYPED',
+      },
       uploadedAt: new Date(),
       updatedAt: new Date(),
     };
@@ -119,19 +124,26 @@ export class DocumentsService {
 
       verificationNotes = `Verified against KMK Anabin Database. Institution '${university}' recognized with status H+. German Grade: ${bavarian.germanGrade}.`;
 
-      // Update primary education to VERIFIED
+      // Update primary education to DOCUMENT_VERIFIED
       if (applicant.educations && applicant.educations.length > 0) {
         const primaryEdu = applicant.educations[0];
         const prevProv = primaryEdu.provenance;
         primaryEdu.isVerified = true;
-        primaryEdu.provenance = 'VERIFIED';
+        primaryEdu.provenance = 'DOCUMENT_VERIFIED';
+        primaryEdu.provenanceMetadata = {
+          institution: 'DOCUMENT_VERIFIED',
+          qualification: 'DOCUMENT_VERIFIED',
+          gpaOrPercentage: 'DOCUMENT_VERIFIED',
+          germanGpaEquivalent: 'AI_SUGGESTED',
+          anabinStatus: 'DOCUMENT_VERIFIED',
+        };
         primaryEdu.anabinStatus = 'H+';
         primaryEdu.germanGpaEquivalent = bavarian.germanGrade;
         autoSyncedEntity = {
           entityType: 'Education',
           updatedId: primaryEdu.id,
           previousProvenance: prevProv,
-          newProvenance: 'VERIFIED',
+          newProvenance: 'DOCUMENT_VERIFIED',
         };
       }
     } else if (docType === 'LANGUAGE_CERTIFICATE') {
@@ -164,12 +176,17 @@ export class DocumentsService {
         const langObj = applicant.languages[0];
         const prevProv = langObj.provenance;
         langObj.isVerified = true;
-        langObj.provenance = 'VERIFIED';
+        langObj.provenance = 'DOCUMENT_VERIFIED';
+        langObj.provenanceMetadata = {
+          language: 'DOCUMENT_VERIFIED',
+          level: 'DOCUMENT_VERIFIED',
+          score: 'DOCUMENT_VERIFIED',
+        };
         autoSyncedEntity = {
           entityType: 'Language',
           updatedId: langObj.id,
           previousProvenance: prevProv,
-          newProvenance: 'VERIFIED',
+          newProvenance: 'DOCUMENT_VERIFIED',
         };
       }
     } else if (docType === 'EXPERIENCE_LETTER') {
@@ -191,12 +208,17 @@ export class DocumentsService {
       if (emp) {
         const prevProv = emp.provenance;
         emp.isVerified = true;
-        emp.provenance = 'VERIFIED';
+        emp.provenance = 'DOCUMENT_VERIFIED';
+        emp.provenanceMetadata = {
+          employer: 'DOCUMENT_VERIFIED',
+          role: 'DOCUMENT_VERIFIED',
+          totalMonths: 'DOCUMENT_VERIFIED',
+        };
         autoSyncedEntity = {
           entityType: 'Employment',
           updatedId: emp.id,
           previousProvenance: prevProv,
-          newProvenance: 'VERIFIED',
+          newProvenance: 'DOCUMENT_VERIFIED',
         };
       }
     } else if (docType === 'APS_CERTIFICATE') {
@@ -223,7 +245,7 @@ export class DocumentsService {
         entityType: 'APS',
         updatedId: 'aps-cleared',
         previousProvenance: 'PENDING',
-        newProvenance: 'VERIFIED',
+        newProvenance: 'DOCUMENT_VERIFIED',
       };
     } else {
       confidenceScore = 0.92;
@@ -246,6 +268,7 @@ export class DocumentsService {
     doc.extractedData = extractedData;
     doc.verificationState = 'VERIFIED';
     doc.verificationNotes = verificationNotes;
+    doc.provenance = 'DOCUMENT_VERIFIED';
     doc.updatedAt = new Date();
 
     // Re-evaluate recommendations

@@ -19,7 +19,7 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
       goalTrack: '"Study" | "Ausbildung" | "Employment" (optional)',
     },
     execute: async (args, { applicant, prisma }) => {
-      const patch: any = { provenance: 'APPLICANT_PROVIDED' };
+      const patch: any = { provenance: 'USER_TYPED' };
       if (args.fullName) patch.fullName = args.fullName;
       if (args.city) patch.city = args.city;
       if (args.phone) patch.phone = args.phone;
@@ -30,7 +30,7 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
       return {
         success: true,
         updatedFields: Object.keys(patch),
-        message: `Profile personal details updated with provenance: APPLICANT_PROVIDED`,
+        message: `Profile personal details updated with provenance: USER_TYPED`,
       };
     },
   },
@@ -68,7 +68,14 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
         degreeType: args.degreeType || (args.qualification?.toLowerCase().includes('b.tech') || args.qualification?.toLowerCase().includes('b.e') ? 'FOUR_YEAR_BACHELOR' : 'THREE_YEAR_BACHELOR'),
         anabinStatus: 'H+',
         isVerified: false,
-        provenance: 'APPLICANT_PROVIDED',
+        provenance: 'USER_TYPED',
+        provenanceMetadata: {
+          institution: 'USER_TYPED',
+          qualification: 'USER_TYPED',
+          gpaOrPercentage: 'USER_TYPED',
+          germanGpaEquivalent: 'AI_SUGGESTED',
+          anabinStatus: 'AI_SUGGESTED',
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -90,7 +97,7 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
         classification: bavarian.germanGradeClassification,
         anabinStatus: 'H+ (Recognized in Germany)',
         isDirectEntryEligible: bavarian.isEligibleForGermanUniversities,
-        provenance: 'APPLICANT_PROVIDED',
+        provenance: 'USER_TYPED',
       };
     },
   },
@@ -116,7 +123,12 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
         isCurrent: true,
         industry: args.industry || 'IT / Software',
         isVerified: false,
-        provenance: 'APPLICANT_PROVIDED',
+        provenance: 'USER_TYPED',
+        provenanceMetadata: {
+          employer: 'USER_TYPED',
+          role: 'USER_TYPED',
+          totalMonths: 'USER_TYPED',
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -136,7 +148,7 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
         success: true,
         recordedEmployer: args.employer,
         totalMonths: args.totalMonths,
-        provenance: 'APPLICANT_PROVIDED',
+        provenance: 'USER_TYPED',
       };
     },
   },
@@ -151,6 +163,7 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
       score: 'string (optional)',
     },
     execute: async (args, { applicant, prisma, recommendationsService }) => {
+      const isDocVerified = !!args.certificateName;
       const newLang = {
         id: `lang-${Date.now()}`,
         applicantId: applicant.id,
@@ -158,8 +171,12 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
         level: args.level?.toUpperCase() || 'A1',
         certificateName: args.certificateName || null,
         score: args.score || null,
-        isVerified: !!args.certificateName,
-        provenance: args.certificateName ? 'VERIFIED' : 'APPLICANT_PROVIDED',
+        isVerified: isDocVerified,
+        provenance: isDocVerified ? 'DOCUMENT_VERIFIED' : 'USER_TYPED',
+        provenanceMetadata: {
+          language: 'USER_TYPED',
+          level: isDocVerified ? 'DOCUMENT_VERIFIED' : 'USER_TYPED',
+        },
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -190,6 +207,7 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
           applicant.goalTrack === 'Ausbildung'
             ? ['B1', 'B2', 'C1'].includes(newLang.level)
             : true,
+        provenance: isDocVerified ? 'DOCUMENT_VERIFIED' : 'USER_TYPED',
       };
     },
   },
@@ -212,6 +230,7 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
         anabinStatus: evalResult.anabinInstitutionalStatus,
         completenessScore: evalResult.completenessScore,
         missingRequirementsCount: evalResult.missingRequirements.length,
+        provenance: 'AI_SUGGESTED',
       };
     },
   },
@@ -228,7 +247,7 @@ export const REACT_TOOLS: Record<string, ReActTool> = {
         recommendedPackages: evalResult.educaroServiceRouting,
         nextMilestones: evalResult.actionableNextSteps,
         completenessScore: evalResult.completenessScore,
-        provenance: 'AI_GENERATED',
+        provenance: 'AI_SUGGESTED',
       };
     },
   },

@@ -1,5 +1,12 @@
 import React from 'react';
-import { Compass, RefreshCw, UserCheck, CheckCircle2, ChevronDown } from 'lucide-react';
+import {
+  Compass,
+  RefreshCw,
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  GitFork,
+} from 'lucide-react';
 import { ApplicantProfile, GoalTrack } from '../types/index';
 
 interface NavbarProps {
@@ -9,6 +16,8 @@ interface NavbarProps {
   onTrackChange: (track: GoalTrack) => void;
   onResetDemo: () => void;
   isResetting: boolean;
+  onOpenDossierModal: () => void;
+  onOpenPathwayComparator: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -18,6 +27,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onTrackChange,
   onResetDemo,
   isResetting,
+  onOpenDossierModal,
+  onOpenPathwayComparator,
 }) => {
   const completeness = currentApplicant?.recommendation?.completenessScore || 0;
 
@@ -50,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Track Switcher */}
         {currentApplicant && (
-          <div className="hidden md:flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800">
+          <div className="hidden lg:flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800">
             {(['Study', 'Ausbildung', 'Employment'] as GoalTrack[]).map((track) => {
               const active = currentApplicant.goalTrack === track;
               return (
@@ -72,20 +83,40 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
 
-        {/* Right Tools: Profile Switcher & Meter */}
-        <div className="flex items-center gap-3">
+        {/* Right Tools: Export Dossier, What-If, Profile Switcher & Meter */}
+        <div className="flex items-center gap-2.5">
+          {/* What-If Branches Quick Button */}
+          <button
+            onClick={onOpenPathwayComparator}
+            title="Multi-Pathway What-If Simulation"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition"
+          >
+            <GitFork className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden md:inline">What-If Branches</span>
+          </button>
+
+          {/* Export Dossier for Educaro Button */}
+          <button
+            onClick={onOpenDossierModal}
+            title="Export One-Click Counselor Handoff Package"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Export Dossier</span>
+          </button>
+
           {/* Completeness meter */}
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800">
+          <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800">
             <div className="text-right">
               <div className="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">
-                Profile Readiness
+                Readiness
               </div>
               <div className="text-xs font-bold text-emerald-400 flex items-center justify-end gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                 {completeness}%
               </div>
             </div>
-            <div className="w-12 bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700/50">
+            <div className="w-10 bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700/50">
               <div
                 className="bg-gradient-to-r from-blue-500 to-emerald-400 h-full rounded-full transition-all duration-500"
                 style={{ width: `${completeness}%` }}
@@ -102,7 +133,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {applicants.map((a) => (
                 <option key={a.id} value={a.id}>
-                  👤 {a.fullName} ({a.goalTrack} • {a.city})
+                  👤 {a.fullName} ({a.goalTrack})
                 </option>
               ))}
             </select>

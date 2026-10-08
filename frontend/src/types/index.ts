@@ -1,6 +1,6 @@
 export type GoalTrack = 'Study' | 'Ausbildung' | 'Employment';
 export type OnboardingStatus = 'ONBOARDING' | 'IN_REVIEW' | 'ROADMAP_READY' | 'PLACED';
-export type DataProvenance = 'APPLICANT_PROVIDED' | 'VERIFIED' | 'AI_GENERATED';
+export type DataProvenance = 'DOCUMENT_VERIFIED' | 'USER_TYPED' | 'AI_SUGGESTED';
 export type EligibilityStatus = 'ELIGIBLE' | 'CONDITIONALLY_ELIGIBLE' | 'INELIGIBLE' | 'NEEDS_ASSESSMENT';
 
 export interface Education {
@@ -20,6 +20,7 @@ export interface Education {
   anabinStatus?: string;
   isVerified: boolean;
   provenance: DataProvenance;
+  provenanceMetadata?: Record<string, string>;
 }
 
 export interface Employment {
@@ -35,6 +36,7 @@ export interface Employment {
   industry?: string;
   isVerified: boolean;
   provenance: DataProvenance;
+  provenanceMetadata?: Record<string, string>;
 }
 
 export interface Language {
@@ -46,6 +48,7 @@ export interface Language {
   score?: string;
   isVerified: boolean;
   provenance: DataProvenance;
+  provenanceMetadata?: Record<string, string>;
 }
 
 export interface Document {
@@ -61,6 +64,8 @@ export interface Document {
   extractedData?: Record<string, any>;
   verificationState: 'PENDING' | 'VERIFIED' | 'FLAGGED_FOR_REVIEW' | 'REJECTED';
   verificationNotes?: string;
+  provenance?: DataProvenance;
+  provenanceMetadata?: Record<string, string>;
   uploadedAt: string;
 }
 
@@ -78,6 +83,7 @@ export interface MotivationMedia {
   motivationKeywords?: string[];
   videoDurationSeconds?: number;
   provenance: DataProvenance;
+  provenanceMetadata?: Record<string, string>;
 }
 
 export interface MissingRequirement {
@@ -104,6 +110,119 @@ export interface ActionableStep {
   text: string;
 }
 
+export interface PathwaySimulationBranch {
+  track: GoalTrack;
+  title: string;
+  badge: string;
+  eligibilityScore: number;
+  eligibilityStatus: 'ELIGIBLE' | 'CONDITIONALLY_ELIGIBLE' | 'INELIGIBLE';
+  timelineToDepartureMonths: string;
+  languagePrerequisite: {
+    minimumRequired: string;
+    recommended: string;
+    applicantCurrent: string;
+    isFulfilled: boolean;
+    gapAnalysis: string;
+  };
+  financialThreshold: {
+    blockedAccountRequired: boolean;
+    blockedAccountAmountEur?: number;
+    monthlyStipendAvailable: boolean;
+    monthlyStipendAmountEur?: string;
+    financialSummary: string;
+  };
+  legalAndVisaChecks: {
+    apsMandatory: boolean;
+    apsStatusNotice: string;
+    anabinRecognitionStatus: string;
+    visaType: string;
+  };
+  careerAndPrOutlook: {
+    graduationOrContractDuration: string;
+    prEligibilityTimeline: string;
+    startingSalaryRange: string;
+  };
+  matchedEducaroService: {
+    packageName: string;
+    matchScore: number;
+    highlight: string;
+  };
+  pros: string[];
+  riskBottlenecks: string[];
+}
+
+export interface PathwayComparisonResult {
+  candidateName: string;
+  selectedTrack: GoalTrack;
+  simulatedAt: string;
+  activeOverridesApplied?: Record<string, any>;
+  pathways: {
+    study: PathwaySimulationBranch;
+    ausbildung: PathwaySimulationBranch;
+    employment: PathwaySimulationBranch;
+  };
+  bestMatchedTrack: GoalTrack;
+  counselorStrategicAdvice: string;
+}
+
+export interface EducaroCounselorDossier {
+  dossierId: string;
+  applicantId: string;
+  compiledAt: string;
+  compilationVersion: string;
+  auditIntegritySignature: string;
+  executiveSummary: {
+    applicantName: string;
+    email: string;
+    phone: string | null;
+    city: string;
+    state: string;
+    country: string;
+    primaryTrack: string;
+    targetIntake: string;
+    eligibilityStatus: string;
+    completenessScore: number;
+    highestBavarianGpa: number | null;
+    bavarianClassification: string;
+    primaryGermanLevel: string;
+    primaryEnglishLevel: string;
+  };
+  provenanceAuditBreakdown: {
+    totalEvaluatedAttributes: number;
+    documentVerifiedCount: number;
+    userTypedCount: number;
+    aiSuggestedCount: number;
+    documentVerifiedPercentage: number;
+    userTypedPercentage: number;
+    aiSuggestedPercentage: number;
+    antiHallucinationGuarantee: string;
+  };
+  regulatoryChecklist: {
+    apsMandatory: boolean;
+    apsStatus: string;
+    anabinInstitutionalStatus: string;
+    blockedAccountRequired: boolean;
+    blockedAccountAmountEur: number | null;
+    trainingStipendEligible: boolean;
+    visaCategory: string;
+  };
+  structuredProfileData: {
+    educations: Education[];
+    employments: Employment[];
+    languages: Language[];
+    documents: Document[];
+    motivationMedia: MotivationMedia | null;
+  };
+  pathwayComparisonMatrix: PathwayComparisonResult;
+  educaroServiceRouting: EducaroServicePackage[];
+  counselorPriorityActionItems: Array<{
+    priority: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+    action: string;
+    targetDepartment: string;
+    estimatedTurnaround: string;
+  }>;
+}
+
 export interface QualificationRecommendation {
   id: string;
   applicantId: string;
@@ -114,8 +233,11 @@ export interface QualificationRecommendation {
   anabinInstitutionalStatus?: string;
   apsRequired: boolean;
   educaroServiceRouting?: EducaroServicePackage[];
+  pathwayComparison?: PathwayComparisonResult;
   actionableNextSteps?: ActionableStep[];
   aiSummaryNotes?: string;
+  provenance: DataProvenance;
+  provenanceMetadata?: Record<string, string>;
   generatedAt?: string;
   updatedAt?: string;
 }
@@ -133,6 +255,7 @@ export interface ApplicantProfile {
   goalTrack: GoalTrack;
   status: OnboardingStatus;
   provenance: DataProvenance;
+  provenanceMetadata?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 

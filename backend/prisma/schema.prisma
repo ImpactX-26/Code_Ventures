@@ -21,9 +21,9 @@ enum OnboardingStatus {
 }
 
 enum DataProvenance {
-  APPLICANT_PROVIDED
-  VERIFIED
-  AI_GENERATED
+  DOCUMENT_VERIFIED
+  USER_TYPED
+  AI_SUGGESTED
 }
 
 enum DocumentType {
@@ -60,28 +60,29 @@ enum DegreeType {
 }
 
 model ApplicantProfile {
-  id               String            @id @default(uuid())
-  fullName         String
-  email            String            @unique
-  phone            String?
-  city             String?
-  state            String?
-  country          String            @default("India")
-  targetIntake     String?
-  availabilityDate DateTime?
-  goalTrack        GoalTrack         @default(Study)
-  status           OnboardingStatus  @default(ONBOARDING)
-  provenance       DataProvenance    @default(APPLICANT_PROVIDED)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                 String            @id @default(uuid())
+  fullName           String
+  email              String            @unique
+  phone              String?
+  city               String?
+  state              String?
+  country            String            @default("India")
+  targetIntake       String?
+  availabilityDate   DateTime?
+  goalTrack          GoalTrack         @default(Study)
+  status             OnboardingStatus  @default(ONBOARDING)
+  provenance         DataProvenance    @default(USER_TYPED)
+  provenanceMetadata Json?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
-  educations       Education[]
-  employments      Employment[]
-  languages        Language[]
-  documents        Document[]
-  motivationMedia  MotivationMedia?
-  recommendation   QualificationRecommendation?
-  chatSessions     ChatSession[]
+  educations         Education[]
+  employments        Employment[]
+  languages          Language[]
+  documents          Document[]
+  motivationMedia    MotivationMedia?
+  recommendation     QualificationRecommendation?
+  chatSessions       ChatSession[]
 
   @@map("applicant_profiles")
 }
@@ -103,7 +104,8 @@ model Education {
   degreeType          DegreeType?
   anabinStatus        String?           @default("H+")
   isVerified          Boolean           @default(false)
-  provenance          DataProvenance    @default(APPLICANT_PROVIDED)
+  provenance          DataProvenance    @default(USER_TYPED)
+  provenanceMetadata Json?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
 
@@ -111,78 +113,83 @@ model Education {
 }
 
 model Employment {
-  id           String            @id @default(uuid())
-  applicantId  String
-  applicant    ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
-  employer     String
-  role         String
-  responsibilities String?
-  startDate    DateTime?
-  endDate      DateTime?
-  isCurrent    Boolean           @default(false)
-  totalMonths  Int?
-  industry     String?
-  isVerified   Boolean           @default(false)
-  provenance   DataProvenance    @default(APPLICANT_PROVIDED)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id                 String            @id @default(uuid())
+  applicantId        String
+  applicant          ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  employer           String
+  role               String
+  responsibilities   String?
+  startDate          DateTime?
+  endDate            DateTime?
+  isCurrent          Boolean           @default(false)
+  totalMonths        Int?
+  industry           String?
+  isVerified         Boolean           @default(false)
+  provenance         DataProvenance    @default(USER_TYPED)
+  provenanceMetadata Json?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@map("employments")
 }
 
 model Language {
-  id              String            @id @default(uuid())
-  applicantId     String
-  applicant       ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
-  language        String
-  level           String
-  certificateName String?
-  score           String?
-  isVerified      Boolean           @default(false)
-  provenance      DataProvenance    @default(APPLICANT_PROVIDED)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id                 String            @id @default(uuid())
+  applicantId        String
+  applicant          ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  language           String
+  level              String
+  certificateName    String?
+  score              String?
+  isVerified         Boolean           @default(false)
+  provenance         DataProvenance    @default(USER_TYPED)
+  provenanceMetadata Json?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@map("languages")
 }
 
 model Document {
-  id                String            @id @default(uuid())
-  applicantId       String
-  applicant         ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
-  title             String
-  docType           DocumentType
-  fileUrl           String
-  fileName          String
-  fileSizeBytes     Int?
-  mimeType          String?
-  extractionFlags   Json?
-  extractedData     Json?
-  verificationState VerificationState @default(PENDING)
-  verificationNotes String?
-  uploadedAt        DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  id                 String            @id @default(uuid())
+  applicantId        String
+  applicant          ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  title              String
+  docType            DocumentType
+  fileUrl            String
+  fileName           String
+  fileSizeBytes      Int?
+  mimeType           String?
+  extractionFlags    Json?
+  extractedData      Json?
+  verificationState  VerificationState @default(PENDING)
+  verificationNotes  String?
+  provenance         DataProvenance    @default(DOCUMENT_VERIFIED)
+  provenanceMetadata Json?
+  uploadedAt         DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@map("documents")
 }
 
 model MotivationMedia {
-  id                         String            @id @default(uuid())
-  applicantId                String            @unique
-  applicant                  ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
-  primaryReasonToMigrate     String?
-  targetRegionsInGermany     Json?
-  longTermCareerGoals        String?
-  preferredLanguageOfStudyWork String?         @default("English")
-  introVideoUrl              String?
-  introVideoTranscript       String?
-  audioTranscript            String?
-  sentimentScore             Float?
-  motivationKeywords         Json?
-  videoDurationSeconds       Int?
-  provenance                 DataProvenance    @default(APPLICANT_PROVIDED)
-  createdAt                  DateTime          @default(now())
-  updatedAt                  DateTime          @updatedAt
+  id                           String            @id @default(uuid())
+  applicantId                  String            @unique
+  applicant                    ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  primaryReasonToMigrate       String?
+  targetRegionsInGermany       Json?
+  longTermCareerGoals          String?
+  preferredLanguageOfStudyWork String?           @default("English")
+  introVideoUrl                String?
+  introVideoTranscript         String?
+  audioTranscript              String?
+  sentimentScore               Float?
+  motivationKeywords           Json?
+  videoDurationSeconds         Int?
+  provenance                   DataProvenance    @default(USER_TYPED)
+  provenanceMetadata           Json?
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
 
   @@map("motivation_media")
 }
@@ -198,8 +205,11 @@ model QualificationRecommendation {
   anabinInstitutionalStatus String?           @default("H+")
   apsRequired               Boolean           @default(true)
   educaroServiceRouting     Json?
+  pathwayComparison         Json?
   actionableNextSteps       Json?
   aiSummaryNotes            String?
+  provenance                DataProvenance    @default(AI_SUGGESTED)
+  provenanceMetadata        Json?
   generatedAt               DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
 

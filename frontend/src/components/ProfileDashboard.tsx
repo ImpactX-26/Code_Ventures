@@ -5,13 +5,13 @@ import {
   Languages,
   FileText,
   Video,
-  Award,
-  Calendar,
   MapPin,
-  CheckCircle2,
-  ExternalLink,
   Calculator,
   Building,
+  Download,
+  GitFork,
+  ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import { ApplicantProfile } from '../types/index';
 import { ProvenanceBadge } from './ProvenanceBadge';
@@ -20,12 +20,16 @@ interface ProfileDashboardProps {
   applicant: ApplicantProfile;
   onOpenOcrModal: () => void;
   onOpenVideoRecorder: () => void;
+  onOpenDossierModal: () => void;
+  onOpenPathwayComparator: () => void;
 }
 
 export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   applicant,
   onOpenOcrModal,
   onOpenVideoRecorder,
+  onOpenDossierModal,
+  onOpenPathwayComparator,
 }) => {
   const educations = applicant.educations || [];
   const employments = applicant.employments || [];
@@ -35,11 +39,11 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
 
   return (
     <div className="space-y-5 pb-6">
-      {/* Top Banner Card: Personal Overview */}
+      {/* Top Banner Card: Personal Overview & Actions */}
       <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-850 border border-slate-800 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -z-0 pointer-events-none" />
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-blue-500/20">
               {applicant.fullName.charAt(0)}
@@ -68,17 +72,54 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="px-3.5 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-right">
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Target Intake</div>
-              <div className="text-xs font-bold text-blue-300">
-                {applicant.targetIntake || 'Winter Semester 2025/26'}
-              </div>
-            </div>
-            <div className="px-3.5 py-2 rounded-xl bg-blue-600/10 border border-blue-500/30 text-right">
-              <div className="text-[10px] text-blue-400 uppercase font-semibold">Track</div>
-              <div className="text-xs font-bold text-white">{applicant.goalTrack}</div>
-            </div>
+          {/* Quick Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={onOpenPathwayComparator}
+              className="px-3.5 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+            >
+              <GitFork className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Multi-Pathway "What-If"</span>
+            </button>
+
+            <button
+              onClick={onOpenDossierModal}
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-blue-600/30"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export Dossier for Educaro</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Hallucination-Proof Provenance Legend Banner */}
+      <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span className="font-bold text-slate-200">Hallucination-Proof Source Tracking:</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+            <span className="text-slate-300">
+              <strong className="text-emerald-400">Green:</strong> Document-Verified (OCR/Test Center)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <span className="text-slate-300">
+              <strong className="text-blue-400">Blue:</strong> User-Typed (Direct Candidate Claim)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+            <span className="text-slate-300">
+              <strong className="text-amber-400">Amber:</strong> AI-Suggested (Formula Inferred)
+            </span>
           </div>
         </div>
       </div>
@@ -147,7 +188,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
                             : 'Befriedigend'}
                           )
                         </span>
-                        <ProvenanceBadge provenance="AI_GENERATED" size="sm" />
+                        <ProvenanceBadge provenance="AI_SUGGESTED" size="xs" />
                       </div>
                     )}
                   </div>
@@ -321,7 +362,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
 
                   <div className="shrink-0">
                     <ProvenanceBadge
-                      provenance={doc.verificationState === 'VERIFIED' ? 'VERIFIED' : 'APPLICANT_PROVIDED'}
+                      provenance={doc.verificationState === 'VERIFIED' ? 'DOCUMENT_VERIFIED' : 'USER_TYPED'}
                     />
                   </div>
                 </div>

@@ -7,8 +7,9 @@ import {
   FileCheck,
   Split,
   Maximize2,
-  RefreshCw,
   Compass,
+  GitFork,
+  Download,
 } from 'lucide-react';
 import { ApplicantProfile, GoalTrack } from './types/index';
 import { api } from './services/api';
@@ -16,18 +17,21 @@ import { Navbar } from './components/Navbar';
 import { ChatInterface } from './components/ChatInterface';
 import { ProfileDashboard } from './components/ProfileDashboard';
 import { RoadmapView } from './components/RoadmapView';
+import { PathwayComparator } from './components/PathwayComparator';
 import { VideoRecorder } from './components/VideoRecorder';
 import { DocumentOcrModal } from './components/DocumentOcrModal';
+import { DossierModal } from './components/DossierModal';
 
 export function App() {
   const [applicants, setApplicants] = useState<ApplicantProfile[]>([]);
   const [currentApplicantId, setCurrentApplicantId] = useState<string>('');
   const [currentApplicant, setCurrentApplicant] = useState<ApplicantProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'chat' | 'profile' | 'roadmap'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'profile' | 'roadmap' | 'comparator'>('chat');
   const [isSplitView, setIsSplitView] = useState<boolean>(true);
   const [isResetting, setIsResetting] = useState<boolean>(false);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState<boolean>(false);
   const [isOcrModalOpen, setIsOcrModalOpen] = useState<boolean>(false);
+  const [isDossierModalOpen, setIsDossierModalOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Load applicants on initial mount
@@ -68,7 +72,6 @@ export function App() {
     try {
       const detailed = await api.getApplicant(currentApplicantId);
       setCurrentApplicant(detailed);
-      // Update in list
       setApplicants((prev) =>
         prev.map((a) => (a.id === detailed.id ? detailed : a)),
       );
@@ -123,6 +126,8 @@ export function App() {
         onTrackChange={handleTrackChange}
         onResetDemo={handleResetDemo}
         isResetting={isResetting}
+        onOpenDossierModal={() => setIsDossierModalOpen(true)}
+        onOpenPathwayComparator={() => setActiveTab('comparator')}
       />
 
       {/* Main Container */}
@@ -130,7 +135,7 @@ export function App() {
         {/* Navigation Bar / Mode Toggle */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-800/80">
           {/* Tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800">
             <button
               onClick={() => setActiveTab('chat')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
@@ -156,6 +161,18 @@ export function App() {
             </button>
 
             <button
+              onClick={() => setActiveTab('comparator')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
+                activeTab === 'comparator'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                  : 'text-indigo-300 hover:text-white'
+              }`}
+            >
+              <GitFork className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Multi-Pathway "What-If"</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('roadmap')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-2 ${
                 activeTab === 'roadmap'
@@ -170,6 +187,14 @@ export function App() {
 
           {/* Quick Actions & Split View Toggle */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsDossierModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-bold flex items-center gap-1.5 transition"
+            >
+              <Download className="w-3.5 h-3.5 text-blue-400" />
+              <span className="hidden sm:inline">Export Dossier</span>
+            </button>
+
             <button
               onClick={() => setIsOcrModalOpen(true)}
               className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-semibold flex items-center gap-1.5 transition"
@@ -189,7 +214,7 @@ export function App() {
             {/* Split View Toggle for wide displays */}
             <button
               onClick={() => setIsSplitView((prev) => !prev)}
-              title={isSplitView ? 'Switch to Full Tab View' : 'Switch to Split Pane View'}
+              title={isSplitView ? 'Switch to Focused Tab View' : 'Switch to Split Pane View'}
               className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-semibold transition"
             >
               {isSplitView ? (
@@ -211,7 +236,7 @@ export function App() {
         {currentApplicant && (
           <div className="flex-1 flex flex-col min-h-0">
             {isSplitView ? (
-              /* Modern Split-Pane View: Chat on Left, Profile/Roadmap on Right */
+              /* Split-Pane View: Chat on Left, Profile/Comparator/Roadmap on Right */
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-[720px]">
                 {/* Left Pane: Interactive Chat Counselor (5 cols) */}
                 <div className="lg:col-span-5 h-[720px] flex flex-col">
@@ -223,9 +248,14 @@ export function App() {
                   />
                 </div>
 
-                {/* Right Pane: Live Profile or Roadmap (7 cols) */}
+                {/* Right Pane: Live Profile, Pathway Comparator, or Roadmap (7 cols) */}
                 <div className="lg:col-span-7 h-[720px] overflow-y-auto pr-1">
-                  {activeTab === 'roadmap' ? (
+                  {activeTab === 'comparator' ? (
+                    <PathwayComparator
+                      applicant={currentApplicant}
+                      onTrackSelected={handleTrackChange}
+                    />
+                  ) : activeTab === 'roadmap' ? (
                     <RoadmapView
                       applicant={currentApplicant}
                       onRefreshRecommendation={handleRefreshApplicant}
@@ -236,12 +266,14 @@ export function App() {
                       applicant={currentApplicant}
                       onOpenOcrModal={() => setIsOcrModalOpen(true)}
                       onOpenVideoRecorder={() => setIsVideoModalOpen(true)}
+                      onOpenDossierModal={() => setIsDossierModalOpen(true)}
+                      onOpenPathwayComparator={() => setActiveTab('comparator')}
                     />
                   )}
                 </div>
               </div>
             ) : (
-              /* Single Tab View */
+              /* Single Focused Tab View */
               <div className="flex-1">
                 {activeTab === 'chat' && (
                   <div className="h-[740px]">
@@ -259,6 +291,15 @@ export function App() {
                     applicant={currentApplicant}
                     onOpenOcrModal={() => setIsOcrModalOpen(true)}
                     onOpenVideoRecorder={() => setIsVideoModalOpen(true)}
+                    onOpenDossierModal={() => setIsDossierModalOpen(true)}
+                    onOpenPathwayComparator={() => setActiveTab('comparator')}
+                  />
+                )}
+
+                {activeTab === 'comparator' && (
+                  <PathwayComparator
+                    applicant={currentApplicant}
+                    onTrackSelected={handleTrackChange}
                   />
                 )}
 
@@ -292,6 +333,15 @@ export function App() {
           isOpen={isOcrModalOpen}
           onClose={() => setIsOcrModalOpen(false)}
           onOcrCompleted={handleRefreshApplicant}
+        />
+      )}
+
+      {/* One-Click Educaro Counselor Dossier Handoff Modal (Feature 3) */}
+      {currentApplicant && (
+        <DossierModal
+          applicant={currentApplicant}
+          isOpen={isDossierModalOpen}
+          onClose={() => setIsDossierModalOpen(false)}
         />
       )}
     </div>

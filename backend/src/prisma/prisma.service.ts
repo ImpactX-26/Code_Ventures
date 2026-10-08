@@ -80,6 +80,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
                       motivationKeywords: motivationMedia.motivationKeywords,
                       videoDurationSeconds: motivationMedia.videoDurationSeconds,
                       provenance: motivationMedia.provenance,
+                      provenanceMetadata: (motivationMedia as any).provenanceMetadata,
                     },
                   }
                 : undefined,
@@ -95,6 +96,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
                       educaroServiceRouting: recommendation.educaroServiceRouting,
                       actionableNextSteps: recommendation.actionableNextSteps,
                       aiSummaryNotes: recommendation.aiSummaryNotes,
+                      provenance: recommendation.provenance,
+                      provenanceMetadata: (recommendation as any).provenanceMetadata,
                     },
                   }
                 : undefined,
@@ -170,7 +173,13 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       availabilityDate: data.availabilityDate ? new Date(data.availabilityDate) : new Date(),
       goalTrack: data.goalTrack || 'Study',
       status: 'ONBOARDING',
-      provenance: data.provenance || 'APPLICANT_PROVIDED',
+      provenance: data.provenance || 'USER_TYPED',
+      provenanceMetadata: data.provenanceMetadata || {
+        fullName: 'USER_TYPED',
+        email: 'USER_TYPED',
+        city: 'USER_TYPED',
+        targetIntake: 'USER_TYPED',
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
       educations: data.educations || [],
@@ -190,6 +199,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         educaroServiceRouting: [],
         actionableNextSteps: [],
         aiSummaryNotes: 'Profile created. Conversational assessment ongoing.',
+        provenance: 'AI_SUGGESTED',
+        provenanceMetadata: {
+          eligibilityStatus: 'AI_SUGGESTED',
+          completenessScore: 'AI_SUGGESTED',
+        },
         generatedAt: new Date(),
         updatedAt: new Date(),
       },
@@ -210,6 +224,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             goalTrack: newApplicant.goalTrack,
             status: newApplicant.status as any,
             provenance: newApplicant.provenance as any,
+            provenanceMetadata: newApplicant.provenanceMetadata,
           },
         });
       } catch (err) {

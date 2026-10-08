@@ -48,6 +48,35 @@ export class RecommendationsController {
     return applicant.recommendation;
   }
 
+  @Get(':applicantId/pathway-comparison')
+  async getPathwayComparison(@Param('applicantId') applicantId: string) {
+    const applicant = await this.prisma.getApplicantById(applicantId);
+    if (!applicant) {
+      throw new NotFoundException(`Applicant with ID ${applicantId} not found`);
+    }
+
+    return this.recommendationsService.simulateAllPathways(applicant);
+  }
+
+  @Post(':applicantId/simulate-what-if')
+  async simulateWhatIf(
+    @Param('applicantId') applicantId: string,
+    @Body() overrides: {
+      germanLevel?: string;
+      gpaOrPercentage?: number;
+      experienceMonths?: number;
+      hasApsCertificate?: boolean;
+      goalTrack?: 'Study' | 'Ausbildung' | 'Employment';
+    },
+  ) {
+    const applicant = await this.prisma.getApplicantById(applicantId);
+    if (!applicant) {
+      throw new NotFoundException(`Applicant with ID ${applicantId} not found`);
+    }
+
+    return this.recommendationsService.simulateAllPathways(applicant, overrides);
+  }
+
   @Post('calculate-bavarian-gpa')
   calculateGpa(
     @Body() body: { score: number; maxScore?: number; minPassingScore?: number },

@@ -1,0 +1,31 @@
+{
+  "name": "aeropath-ai",
+  "version": "1.0.0",
+  "description": "AeroPath AI — Intelligent AI-Powered Applicant Journey Platform for Indian Applicants Pursuing Study, Ausbildung, or Employment in Germany",
+  "scripts": {
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start:backend": "cd backend && node dist/main.js",
+    "start:frontend": "cd frontend && npm run preview",
+    "prisma:generate": "cd backend && npx prisma generate",
+    "prisma:push": "cd backend && npx prisma db push"
+  },
+  "keywords": [
+    "aeropath",
+    "educaro",
+    "germany",
+    "ausbildung",
+    "higher-education",
+    "react",
+    "nestjs",
+    "prisma",
+    "postgresql",
+    "agentic-ai",
+    "react-framework"
+  ],
+  "author": "AeroPath AI Team",
+  "license": "MIT"
+}

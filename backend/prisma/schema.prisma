@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GoalTrack {
+  Study
+  Ausbildung
+  Employment
+}
+
+enum OnboardingStatus {
+  ONBOARDING
+  IN_REVIEW
+  ROADMAP_READY
+  PLACED
+}
+
+enum DataProvenance {
+  APPLICANT_PROVIDED
+  VERIFIED
+  AI_GENERATED
+}
+
+enum DocumentType {
+  DEGREE_CERTIFICATE
+  TRANSCRIPT
+  CV
+  EXPERIENCE_LETTER
+  LANGUAGE_CERTIFICATE
+  PASSPORT
+  MOTIVATION_LETTER
+  APS_CERTIFICATE
+}
+
+enum VerificationState {
+  PENDING
+  VERIFIED
+  FLAGGED_FOR_REVIEW
+  REJECTED
+}
+
+enum EligibilityStatus {
+  ELIGIBLE
+  CONDITIONALLY_ELIGIBLE
+  INELIGIBLE
+  NEEDS_ASSESSMENT
+}
+
+enum DegreeType {
+  FOUR_YEAR_BACHELOR
+  THREE_YEAR_BACHELOR
+  TWELFTH_GRADE
+  MASTER
+  DIPLOMA
+}
+
+model ApplicantProfile {
+  id               String            @id @default(uuid())
+  fullName         String
+  email            String            @unique
+  phone            String?
+  city             String?
+  state            String?
+  country          String            @default("India")
+  targetIntake     String?
+  availabilityDate DateTime?
+  goalTrack        GoalTrack         @default(Study)
+  status           OnboardingStatus  @default(ONBOARDING)
+  provenance       DataProvenance    @default(APPLICANT_PROVIDED)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  educations       Education[]
+  employments      Employment[]
+  languages        Language[]
+  documents        Document[]
+  motivationMedia  MotivationMedia?
+  recommendation   QualificationRecommendation?
+  chatSessions     ChatSession[]
+
+  @@map("applicant_profiles")
+}
+
+model Education {
+  id                  String            @id @default(uuid())
+  applicantId         String
+  applicant           ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  institution         String
+  qualification       String
+  fieldOfStudy        String?
+  startYear           Int?
+  graduationYear      Int?
+  gpaOrPercentage     Float?
+  maxGpaOrScale       Float?            @default(10.0)
+  germanGpaEquivalent Float?
+  gradingSystem       String?           @default("CGPA_10")
+  isIndianDegree      Boolean           @default(true)
+  degreeType          DegreeType?
+  anabinStatus        String?           @default("H+")
+  isVerified          Boolean           @default(false)
+  provenance          DataProvenance    @default(APPLICANT_PROVIDED)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@map("educations")
+}
+
+model Employment {
+  id           String            @id @default(uuid())
+  applicantId  String
+  applicant    ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  employer     String
+  role         String
+  responsibilities String?
+  startDate    DateTime?
+  endDate      DateTime?
+  isCurrent    Boolean           @default(false)
+  totalMonths  Int?
+  industry     String?
+  isVerified   Boolean           @default(false)
+  provenance   DataProvenance    @default(APPLICANT_PROVIDED)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@map("employments")
+}
+
+model Language {
+  id              String            @id @default(uuid())
+  applicantId     String
+  applicant       ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  language        String
+  level           String
+  certificateName String?
+  score           String?
+  isVerified      Boolean           @default(false)
+  provenance      DataProvenance    @default(APPLICANT_PROVIDED)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("languages")
+}
+
+model Document {
+  id                String            @id @default(uuid())
+  applicantId       String
+  applicant         ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  title             String
+  docType           DocumentType
+  fileUrl           String
+  fileName          String
+  fileSizeBytes     Int?
+  mimeType          String?
+  extractionFlags   Json?
+  extractedData     Json?
+  verificationState VerificationState @default(PENDING)
+  verificationNotes String?
+  uploadedAt        DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@map("documents")
+}
+
+model MotivationMedia {
+  id                         String            @id @default(uuid())
+  applicantId                String            @unique
+  applicant                  ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  primaryReasonToMigrate     String?
+  targetRegionsInGermany     Json?
+  longTermCareerGoals        String?
+  preferredLanguageOfStudyWork String?         @default("English")
+  introVideoUrl              String?
+  introVideoTranscript       String?
+  audioTranscript            String?
+  sentimentScore             Float?
+  motivationKeywords         Json?
+  videoDurationSeconds       Int?
+  provenance                 DataProvenance    @default(APPLICANT_PROVIDED)
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+
+  @@map("motivation_media")
+}
+
+model QualificationRecommendation {
+  id                        String            @id @default(uuid())
+  applicantId               String            @unique
+  applicant                 ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  eligibilityStatus         EligibilityStatus @default(NEEDS_ASSESSMENT)
+  completenessScore         Int               @default(0)
+  pathwaySummary            String?
+  missingRequirements       Json?
+  anabinInstitutionalStatus String?           @default("H+")
+  apsRequired               Boolean           @default(true)
+  educaroServiceRouting     Json?
+  actionableNextSteps       Json?
+  aiSummaryNotes            String?
+  generatedAt               DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+
+  @@map("qualification_recommendations")
+}
+
+model ChatSession {
+  id          String            @id @default(uuid())
+  applicantId String
+  applicant   ApplicantProfile  @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  title       String?           @default("Onboarding Assessment")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  messages    ChatMessage[]
+
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id             String       @id @default(uuid())
+  sessionId      String
+  session        ChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  thoughtProcess Json?
+  toolCalls      Json?
+  createdAt      DateTime     @default(now())
+
+  @@map("chat_messages")
+}
